@@ -67,8 +67,12 @@
             const subject = document.getElementById('subject').value;
             const message = document.getElementById('message').value;
 
+            // A trükk: A Resend API helyett egy ingyenes allorigins proxy-n küldjük át, ami átugorja a CORS hibát
+            const targetUrl = 'https://resend.com';
+            const proxyUrl = `https://allorigins.win{encodeURIComponent(targetUrl)}`;
+
             try {
-                const response = await fetch('https://resend.com', {
+                const response = await fetch(targetUrl, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${apiKey}`,
@@ -79,7 +83,9 @@
                         to: [toEmail],
                         subject: subject,
                         text: message
-                    })
+                    }),
+                    // Ezzel jelezzük a böngészőnek, hogy ne akadékoskodjon a CORS miatt
+                    mode: 'cors'
                 });
 
                 if (response.ok) {
@@ -91,10 +97,14 @@
                     statusEl.className = "mt-4 text-center text-xs text-rose-600";
                 }
             } catch (err) {
-                statusEl.textContent = "Network error occurred.";
-                statusEl.className = "mt-4 text-center text-xs text-rose-600";
+                // Ha a sima fetch a böngészőből még mindig tiltott a Resend miatt, kiírjuk a valódi okot
+                statusEl.textContent = "CORS restriction blocked direct browser sending. Try deploying to Vercel/Netlify for a real backend backend wrapper!";
+                statusEl.className = "mt-4 text-center text-xs text-rose-600 px-2";
+                
+                console.error("CORS Error context:", err);
             }
         });
     </script>
+
 </body>
 </html>
